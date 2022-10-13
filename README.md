@@ -10,6 +10,7 @@ Steps to Create Project:
    - `git push -u origin main`
 
 2. Steps to establish dependencies & typescript
+
    - `npm init -y && tsc --init`
    - `npm i express`
    - `npm i -D @types/express`
@@ -18,3 +19,12 @@ Steps to Create Project:
    - Add: package-lock.json
    - `mkdir src && cd src`
    - `touch index.ts`
+   - `cd ..`
+   - Add: "start" command to package.json - tsc-node src/intex.ts
+   - Run: npm start
+
+3. Building Base System Instance:
+   - Create System class (Singleton)
+   - Create a async start method
+   - Import constructs to `index.ts`
+   - Run `npm start`
