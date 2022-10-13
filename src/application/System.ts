@@ -10,7 +10,8 @@ export class System {
     private constructor(port: number) {
         this._port = port;
         this._express = express();
-        this._server = createServer(this._express)
+        this.configure();
+        this._server = createServer(this._express);
     }
 
     public static instance(port: number): System {
@@ -23,6 +24,10 @@ export class System {
     public async listen() {
         System._instance._server.listen(System._instance._port, () => {
             console.log(`System server active and listening on port: ${System._instance._port}`)
-        })
+        });
+    }
+
+    public configure() {
+        this._express.use(express.json());
     }
 }
