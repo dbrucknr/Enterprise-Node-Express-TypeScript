@@ -1,6 +1,6 @@
 import express, { Application } from "express";
 import { Server, createServer } from "http";
-
+import { SystemRouter } from "./application.routes";
 export class System {
     private _express: Application;
     private _server: Server;
@@ -29,5 +29,6 @@ export class System {
 
     public configure() {
         this._express.use(express.json());
+        new SystemRouter(this._express);
     }
 }
