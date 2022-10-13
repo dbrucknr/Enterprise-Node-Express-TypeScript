@@ -1,6 +1,7 @@
 import express, { Application } from "express";
 import { Server, createServer } from "http";
 import { SystemRouter } from "./application.routes";
+
 export class System {
     private _express: Application;
     private _server: Server;
