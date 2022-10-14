@@ -1,4 +1,4 @@
-import { System } from "./application/System";
+import { System } from "./application/application.system";
 import { StartProcesses } from "./application/application.utilities";
 
 const system = System.instance(8000);
