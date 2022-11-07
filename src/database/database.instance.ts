@@ -1,0 +1,84 @@
+import { DataSource, DataSourceOptions } from "typeorm";
+
+export class Database {
+    static _instance: Database;
+    private _datasource: DataSource;
+    private _errorTable: any
+
+    private constructor(private _settings: DataSourceOptions) {
+        this._settings = _settings;
+        this._datasource = new DataSource(this._settings);
+        this._errorTable = {
+            '3D000': async () => await this.create(),
+            '42P04': async () => await this.connect()
+        }
+    }
+
+    public async connect() {
+        const instance = Database._instance;
+        try {
+            const connection = await instance._datasource.initialize();
+            if (connection.isInitialized) {
+                console.log('Database successfully connected');
+
+                const { version } = await instance.version();
+                console.log(`Database version: ${ version }`);
+
+                const { current_database } = await instance.current();
+                console.log(`Application is currently using the ${ current_database } database`);
+            }
+        } catch (error: any) {
+            // console.error("---------------------", error, error.code, instance._errorTable);
+            await instance._errorTable[error.code]()
+        }
+    }
+
+    // Currently not used - I think this is implied in the DataSource object
+    protected async exists() {
+        const { database } = this._settings;
+        const [ response ] = await this._datasource.query(`SELECT oid FROM pg_datasource WHERE datname = '${ database }'`);
+        return response
+    }
+
+    protected async create() {
+        const { database } = this._settings; 
+        console.log(`Could not find database: ${ database }`)
+        const localhost = new DataSource({
+            type: "postgres",
+            host: "localhost",
+            port: 5432,
+            database: "postgres",
+            synchronize: true,
+            logging: false,
+            entities: ["src/database/entities/*.ts"],
+            migrations: ["src/migration/**/*.ts"],
+            subscribers: ["src/subscriber/**/*.ts"],
+        });
+        const connection = await localhost.initialize();
+        if (connection.isInitialized) {
+            console.log(`Temporary Connection Inialized - Creating Database: ${ database }`)
+            await connection.query(`CREATE DATABASE ${ database }`);
+
+            await connection.destroy();
+            console.log(`Terminating temporary`)
+            await this.connect();
+        }
+    }
+
+    private async current(): Promise<{ current_database: string }> {
+        const [ response ] = await this._datasource.query("SELECT current_database()");
+        return response
+    }
+
+    private async version(): Promise<{ version: string }> {
+        const [ response ] = await this._datasource.query("SELECT version();");
+        return response 
+    }
+
+    public static instance(_settings: DataSourceOptions): Database {
+        if (!Database._instance) {
+            Database._instance = new Database(_settings);
+        }
+        return Database._instance
+    }
+}
