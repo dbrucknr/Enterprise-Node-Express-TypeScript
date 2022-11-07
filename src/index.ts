@@ -1,19 +1,9 @@
 import { System } from "./application/application.system";
 import { Database } from "./database/database.instance";
 import { StartProcesses } from "./application/application.utilities";
+import { MainDatabase } from "./database/database.utilities";
 
 const system = System.instance(8000);
-const database = Database.instance({
-    type: "postgres",
-    host: "localhost",
-    port: 5432,
-    database: "enterprise",
-    synchronize: true,
-    logging: false,
-    entities: ["src/database/entities/*.ts"],
-    migrations: ["src/migration/**/*.ts"],
-    subscribers: ["src/subscriber/**/*.ts"],
-});
+const database = Database.instance();
 
 StartProcesses([database.connect, system.listen]);
-

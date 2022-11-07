@@ -1,12 +1,14 @@
 import { DataSource, DataSourceOptions } from "typeorm";
+import { TempDatabase, MainDatabase } from "./database.utilities";
 
 export class Database {
     static _instance: Database;
     private _datasource: DataSource;
     private _errorTable: any
+    private _settings: DataSourceOptions
 
-    private constructor(private _settings: DataSourceOptions) {
-        this._settings = _settings;
+    private constructor() {
+        this._settings = MainDatabase;
         this._datasource = new DataSource(this._settings);
         this._errorTable = {
             '3D000': async () => await this.create(),
@@ -43,22 +45,11 @@ export class Database {
     protected async create() {
         const { database } = this._settings; 
         console.log(`Could not find database: ${ database }`)
-        const localhost = new DataSource({
-            type: "postgres",
-            host: "localhost",
-            port: 5432,
-            database: "postgres",
-            synchronize: true,
-            logging: false,
-            entities: ["src/database/entities/*.ts"],
-            migrations: ["src/migration/**/*.ts"],
-            subscribers: ["src/subscriber/**/*.ts"],
-        });
+        const localhost = new DataSource(TempDatabase);
         const connection = await localhost.initialize();
         if (connection.isInitialized) {
             console.log(`Temporary Connection Inialized - Creating Database: ${ database }`)
             await connection.query(`CREATE DATABASE ${ database }`);
-
             await connection.destroy();
             console.log(`Terminating temporary`)
             await this.connect();
@@ -75,9 +66,9 @@ export class Database {
         return response 
     }
 
-    public static instance(_settings: DataSourceOptions): Database {
+    public static instance(): Database {
         if (!Database._instance) {
-            Database._instance = new Database(_settings);
+            Database._instance = new Database();
         }
         return Database._instance
     }

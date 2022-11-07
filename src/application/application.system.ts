@@ -23,8 +23,9 @@ export class System {
     }
 
     public async listen() {
-        System._instance._server.listen(System._instance._port, () => {
-            console.log(`System server active and listening on port: ${System._instance._port}`)
+        const instance = System._instance;
+        instance._server.listen(instance._port, () => {
+            console.log(`System server active and listening on port: ${instance._port}`)
         });
     }
 
