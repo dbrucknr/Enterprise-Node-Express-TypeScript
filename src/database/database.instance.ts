@@ -1,6 +1,5 @@
 import { DataSource, DataSourceOptions } from "typeorm";
 import { TempDatabase, MainDatabase } from "./database.utilities";
-
 export class Database {
     static _instance: Database;
     private _datasource: DataSource;
@@ -12,24 +11,16 @@ export class Database {
         this._datasource = new DataSource(this._settings);
         this.handler = {
             '3D000': async () => await this.create(),
-            '42P04': async () => await this.connect()
+            '42P04': async () => await this.connect(),
+            'ECONNREFUSED': async () => await this.status(false)
         }
     }
 
-    public async connect() {
+    public async connect(): Promise<void> {
         const instance = Database._instance;
         try {
-            const connection = await instance._datasource.initialize();
-            if (connection.isInitialized) {
-                console.log('Database successfully connected');
-
-                const { version } = await instance.version();
-                console.log(`Database version: ${ version }`);
-
-                const { current_database } = await instance.current();
-                console.log(`Application is currently using the ${ current_database } database`);
-            }
-            // Return error here?
+            const { isInitialized } = await instance._datasource.initialize();
+            await instance.status(isInitialized)
         } catch (error: any) {
             await instance.handler[error.code]()
         }
@@ -53,6 +44,25 @@ export class Database {
             await connection.destroy();
             console.log(`Terminating temporary`)
             await this.connect();
+        }
+    }
+
+    private async status(initialized: boolean): Promise<void | Error> {
+        const instance = Database._instance;
+        switch(initialized) {
+            case true: {
+                console.log('Database successfully connected');
+
+                const { version } = await instance.version();
+                console.log(`Database version: ${ version }`);
+
+                const { current_database } = await instance.current();
+                console.log(`Application is currently using the ${ current_database } database`);
+                break;
+            }
+            case false: {
+                throw new Error("Database connection could not be initialized.")
+            }
         }
     }
 
