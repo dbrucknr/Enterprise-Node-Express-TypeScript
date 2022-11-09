@@ -4,13 +4,13 @@ import { TempDatabase, MainDatabase } from "./database.utilities";
 export class Database {
     static _instance: Database;
     private _datasource: DataSource;
-    private _errorTable: any
+    private handler: any
     private _settings: DataSourceOptions
 
     private constructor() {
         this._settings = MainDatabase;
         this._datasource = new DataSource(this._settings);
-        this._errorTable = {
+        this.handler = {
             '3D000': async () => await this.create(),
             '42P04': async () => await this.connect()
         }
@@ -29,16 +29,16 @@ export class Database {
                 const { current_database } = await instance.current();
                 console.log(`Application is currently using the ${ current_database } database`);
             }
+            // Return error here?
         } catch (error: any) {
-            // console.error("---------------------", error, error.code, instance._errorTable);
-            await instance._errorTable[error.code]()
+            await instance.handler[error.code]()
         }
     }
 
     // Currently not used - I think this is implied in the DataSource object
-    protected async exists() {
+    protected async exists(): Promise<{ oid: string }> {
         const { database } = this._settings;
-        const [ response ] = await this._datasource.query(`SELECT oid FROM pg_datasource WHERE datname = '${ database }'`);
+        const [ response ] = await this._datasource.query(`SELECT oid FROM pg_database WHERE datname = '${ database }'`);
         return response
     }
 
